@@ -73,7 +73,7 @@ export default function NarrativeDisplay({
     }
 
     try {
-      const res = await fetch('/api/save-moment', {
+      const res = await fetch('/api/save-moments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
