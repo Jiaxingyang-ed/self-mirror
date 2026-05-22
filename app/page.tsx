@@ -42,6 +42,7 @@ export default function Home() {
     narrative: string;
     imagePrompt: string;
     insights: any;
+    choices: any;  // 新增：保存用户选择的完整答案
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -124,10 +125,12 @@ export default function Home() {
         console.warn('Insights 提取失败', e);
       }
 
+      // 将 fullAnswers 直接存入 result 中
       setResult({
         narrative: data.data.narrative,
         imagePrompt: data.data.image_prompt,
         insights,
+        choices: fullAnswers,
       });
     } catch (err: any) {
       setError(err.message || '网络错误，请重试');
@@ -155,72 +158,89 @@ export default function Home() {
 
   if (result) {
     return (
-      <main className="min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-b from-gray-50 to-white dark:from-gray-950 dark:to-black">
-        <NarrativeDisplay
-          narrative={result.narrative}
-          imagePrompt={result.imagePrompt}
-          insights={result.insights}
-          onRegenerate={regenerate}
-          onReset={reset}
-        />
-      </main>
+      <>
+        <div className="fixed top-0 right-0 p-4 z-10">
+          <a href="/moments" className="text-sm text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200">
+            我的瞬间
+          </a>
+        </div>
+        <main className="min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-b from-gray-50 to-white dark:from-gray-950 dark:to-black">
+          <NarrativeDisplay
+            narrative={result.narrative}
+            imagePrompt={result.imagePrompt}
+            insights={result.insights}
+            choices={result.choices}   // 从 result 中取
+            onRegenerate={regenerate}
+            onReset={reset}
+          />
+        </main>
+      </>
     );
   }
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-b from-gray-50 to-white dark:from-gray-950 dark:to-black">
-      <div className="w-full max-w-2xl mx-auto">
-        <ProgressIndicator current={currentIndex + 1} total={total} />
-        <AnimatePresence mode="wait">
-          <QuestionStep
-            key={currentQuestionKey}
-            questionKey={currentQuestionKey}
-            questionText={text}
-            options={options}
-            selected={answers[currentQuestionKey] || ''}
-            onSelect={handleSelect}
-            secondaryOptions={secondary}
-            secondarySelected={secondaryAnswers[currentQuestionKey] || ''}
-            onSecondarySelect={handleSecondarySelect}
-          />
-        </AnimatePresence>
-        <div className="mt-8 flex justify-between">
-          {currentIndex > 0 && (
-            <button
-              onClick={() => setCurrentIndex(currentIndex - 1)}
-              className="px-6 py-2 rounded-full border border-gray-300 text-gray-700 dark:text-gray-300 hover:bg-gray-50"
-            >
-              上一步
-            </button>
-          )}
-          <button
-            onClick={nextQuestion}
-            disabled={!answers[currentQuestionKey]}
-            className={`ml-auto px-6 py-2 rounded-full text-white ${
-              answers[currentQuestionKey]
-                ? 'bg-blue-500 hover:bg-blue-600'
-                : 'bg-gray-300 cursor-not-allowed'
-            }`}
-          >
-            {currentIndex === total - 1 ? '生成我的片刻' : '下一题'}
-          </button>
-        </div>
-        {loading && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-white dark:bg-gray-900 p-6 rounded-xl shadow-xl text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
-              <p className="text-gray-700 dark:text-gray-300">正在读你…</p>
-              <p className="text-sm text-gray-500 mt-1">把碎片拼在一起</p>
-            </div>
-          </div>
-        )}
-        {error && (
-          <div className="mt-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm text-center">
-            {error}
-            <button onClick={generateNarrative} className="ml-2 underline">重试</button>
-          </div>
-        )}
+    <>
+      {/* 固定导航链接 */}
+      <div className="fixed top-0 right-0 p-4 z-10">
+        <a href="/moments" className="text-sm text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200">
+          我的瞬间
+        </a>
       </div>
-    </main>
+
+      <main className="min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-b from-gray-50 to-white dark:from-gray-950 dark:to-black">
+        <div className="w-full max-w-2xl mx-auto">
+          <ProgressIndicator current={currentIndex + 1} total={total} />
+          <AnimatePresence mode="wait">
+            <QuestionStep
+              key={currentQuestionKey}
+              questionKey={currentQuestionKey}
+              questionText={text}
+              options={options}
+              selected={answers[currentQuestionKey] || ''}
+              onSelect={handleSelect}
+              secondaryOptions={secondary}
+              secondarySelected={secondaryAnswers[currentQuestionKey] || ''}
+              onSecondarySelect={handleSecondarySelect}
+            />
+          </AnimatePresence>
+          <div className="mt-8 flex justify-between">
+            {currentIndex > 0 && (
+              <button
+                onClick={() => setCurrentIndex(currentIndex - 1)}
+                className="px-6 py-2 rounded-full border border-gray-300 text-gray-700 dark:text-gray-300 hover:bg-gray-50"
+              >
+                上一步
+              </button>
+            )}
+            <button
+              onClick={nextQuestion}
+              disabled={!answers[currentQuestionKey]}
+              className={`ml-auto px-6 py-2 rounded-full text-white ${
+                answers[currentQuestionKey]
+                  ? 'bg-blue-500 hover:bg-blue-600'
+                  : 'bg-gray-300 cursor-not-allowed'
+              }`}
+            >
+              {currentIndex === total - 1 ? '生成我的片刻' : '下一题'}
+            </button>
+          </div>
+          {loading && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+              <div className="bg-white dark:bg-gray-900 p-6 rounded-xl shadow-xl text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                <p className="text-gray-700 dark:text-gray-300">正在读你…</p>
+                <p className="text-sm text-gray-500 mt-1">把碎片拼在一起</p>
+              </div>
+            </div>
+          )}
+          {error && (
+            <div className="mt-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm text-center">
+              {error}
+              <button onClick={generateNarrative} className="ml-2 underline">重试</button>
+            </div>
+          )}
+        </div>
+      </main>
+    </>
   );
 }
