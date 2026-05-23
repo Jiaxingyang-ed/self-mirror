@@ -24,6 +24,7 @@ export default function NarrativeDisplay({
   const [displayText, setDisplayText] = useState('');
   const [isTyping, setIsTyping] = useState(true);
   const cardRef = useRef<HTMLDivElement>(null);
+  const [showTranslatePrompt, setShowTranslatePrompt] = useState(false);
 
   useEffect(() => {
     setDisplayText('');
@@ -87,6 +88,8 @@ export default function NarrativeDisplay({
       const data = await res.json();
       if (data.success) {
         alert('✨ 已保存到云端，可在“我的瞬间”查看');
+        // 保存成功后显示过渡入口
+        setShowTranslatePrompt(true);
       } else {
         alert('保存失败：' + (data.error || '未知错误'));
       }
@@ -94,6 +97,15 @@ export default function NarrativeDisplay({
       console.error('保存请求失败', err);
       alert('网络错误，保存失败');
     }
+  };
+
+  const handleTranslate = () => {
+    const params = new URLSearchParams({
+      narrative,
+      choices: JSON.stringify(choices || {}),
+      insights: JSON.stringify(insights || {}),
+    });
+    window.location.href = `/translate?${params.toString()}`;
   };
 
   return (
@@ -159,6 +171,21 @@ export default function NarrativeDisplay({
               重新选择
             </button>
           </div>
+
+          {/* 过渡入口 */}
+          {showTranslatePrompt && (
+            <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700 animate-fadeIn">
+              <p className="text-sm text-amber-700 dark:text-amber-300">
+                想把这种感觉，变成今天能做的一件小事吗？
+              </p>
+              <button
+                onClick={handleTranslate}
+                className="mt-2 px-4 py-2 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 text-sm hover:bg-amber-200 transition"
+              >
+                看看可以做什么
+              </button>
+            </div>
+          )}
         </>
       )}
     </div>
